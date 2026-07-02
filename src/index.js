@@ -33,3 +33,13 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`food-bill-tracker API listening on port ${PORT}`);
 });
+
+// Render's free tier sleeps the service after 15 min of no inbound requests.
+// Self-ping every 10 min so it never goes idle long enough to sleep.
+const selfUrl = process.env.RENDER_EXTERNAL_URL;
+if (selfUrl) {
+  const PING_INTERVAL_MS = 10 * 60 * 1000;
+  setInterval(() => {
+    fetch(`${selfUrl}/health`).catch((err) => console.error('Keep-alive ping failed:', err.message));
+  }, PING_INTERVAL_MS);
+}
