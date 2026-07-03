@@ -1,11 +1,9 @@
-const pool = require('../db/pool');
+const billsService = require('../services/billsService');
 
 async function listBills(req, res) {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM bills ORDER BY bill_date DESC, created_at DESC'
-    );
-    res.json(rows);
+    const bills = await billsService.listBills();
+    res.json(bills);
   } catch (err) {
     console.error('listBills error:', err);
     res.status(500).json({ error: 'Failed to fetch bills' });
@@ -15,11 +13,11 @@ async function listBills(req, res) {
 async function getBill(req, res) {
   try {
     const { id } = req.params;
-    const { rows } = await pool.query('SELECT * FROM bills WHERE id = $1', [id]);
-    if (rows.length === 0) {
+    const bill = await billsService.getBillById(id);
+    if (!bill) {
       return res.status(404).json({ error: 'Bill not found' });
     }
-    res.json(rows[0]);
+    res.json(bill);
   } catch (err) {
     console.error('getBill error:', err);
     res.status(500).json({ error: 'Failed to fetch bill' });
@@ -37,13 +35,8 @@ async function createBill(req, res) {
       return res.status(400).json({ error: 'amount must be a non-negative number' });
     }
 
-    const { rows } = await pool.query(
-      `INSERT INTO bills (title, amount, category, bill_date, notes)
-       VALUES ($1, $2, COALESCE($3, 'general'), COALESCE($4, CURRENT_DATE), $5)
-       RETURNING *`,
-      [title, amount, category, bill_date, notes]
-    );
-    res.status(201).json(rows[0]);
+    const bill = await billsService.createBill({ title, amount, category, bill_date, notes });
+    res.status(201).json(bill);
   } catch (err) {
     console.error('createBill error:', err);
     res.status(500).json({ error: 'Failed to create bill' });
@@ -59,23 +52,11 @@ async function updateBill(req, res) {
       return res.status(400).json({ error: 'title must be under 250 characters' });
     }
 
-    const { rows } = await pool.query(
-      `UPDATE bills SET
-        title = COALESCE($1, title),
-        amount = COALESCE($2, amount),
-        category = COALESCE($3, category),
-        bill_date = COALESCE($4, bill_date),
-        notes = COALESCE($5, notes),
-        updated_at = now()
-       WHERE id = $6
-       RETURNING *`,
-      [title, amount, category, bill_date, notes, id]
-    );
-
-    if (rows.length === 0) {
+    const bill = await billsService.updateBill(id, { title, amount, category, bill_date, notes });
+    if (!bill) {
       return res.status(404).json({ error: 'Bill not found' });
     }
-    res.json(rows[0]);
+    res.json(bill);
   } catch (err) {
     console.error('updateBill error:', err);
     res.status(500).json({ error: 'Failed to update bill' });
@@ -85,8 +66,8 @@ async function updateBill(req, res) {
 async function deleteBill(req, res) {
   try {
     const { id } = req.params;
-    const { rowCount } = await pool.query('DELETE FROM bills WHERE id = $1', [id]);
-    if (rowCount === 0) {
+    const removed = await billsService.deleteBill(id);
+    if (!removed) {
       return res.status(404).json({ error: 'Bill not found' });
     }
     res.status(204).send();
@@ -98,13 +79,8 @@ async function deleteBill(req, res) {
 
 async function getSummary(req, res) {
   try {
-    const { rows } = await pool.query(
-      `SELECT category, COUNT(*)::int AS count, SUM(amount)::numeric AS total
-       FROM bills
-       GROUP BY category
-       ORDER BY total DESC`
-    );
-    res.json(rows);
+    const summary = await billsService.getSummary();
+    res.json(summary);
   } catch (err) {
     console.error('getSummary error:', err);
     res.status(500).json({ error: 'Failed to fetch summary' });
