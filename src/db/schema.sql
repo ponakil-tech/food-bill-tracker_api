@@ -33,3 +33,30 @@ ON users(status);
 
 CREATE INDEX IF NOT EXISTS idx_users_created_at
 ON users(created_at);
+
+
+CREATE TABLE IF NOT EXISTS food_entries (
+    id                SERIAL PRIMARY KEY,
+    user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    entry_date        DATE NOT NULL,
+
+    morning_meal      VARCHAR(255),
+    morning_price     NUMERIC(10,2) DEFAULT 0,
+
+    afternoon_meal    VARCHAR(255),
+    afternoon_price   NUMERIC(10,2) DEFAULT 0,
+
+    night_meal        VARCHAR(255),
+    night_price       NUMERIC(10,2) DEFAULT 0,
+
+    total_price       NUMERIC(10,2) NOT NULL DEFAULT 0,
+
+    notes             VARCHAR(500),
+
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_user_date UNIQUE (user_id, entry_date)
+);
+
+CREATE INDEX idx_food_entries_user_date ON food_entries(user_id, entry_date DESC);

@@ -1,12 +1,13 @@
 const userService = require('../services/userService');
+const { success, error } = require('../utils/apiResponse');
 
 async function listUsers(req, res) {
   try {
     const users = await userService.listUsers();
-    res.json(users);
+    return success(res, { data: users, message: 'Users fetched successfully' });
   } catch (err) {
     console.error('listUsers error:', err);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    return error(res, { message: 'Failed to fetch users' });
   }
 }
 
@@ -15,12 +16,12 @@ async function getUser(req, res) {
     const { id } = req.params;
     const user = await userService.getUserById(id);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return error(res, { message: 'User not found', code: 404 });
     }
-    res.json(user);
+    return success(res, { data: user, message: 'User fetched successfully' });
   } catch (err) {
     console.error('getUser error:', err);
-    res.status(500).json({ error: 'Failed to fetch user' });
+    return error(res, { message: 'Failed to fetch user' });
   }
 }
 
@@ -29,23 +30,23 @@ async function createUser(req, res) {
     const { name, phone, password } = req.body;
 
     if (!name || typeof name !== 'string' || name.length > 100) {
-      return res.status(400).json({ error: 'name is required and must be under 100 characters' });
+      return error(res, { message: 'name is required and must be under 100 characters', code: 400 });
     }
     if (!phone || typeof phone !== 'string' || phone.length > 15) {
-      return res.status(400).json({ error: 'phone is required and must be under 15 characters' });
+      return error(res, { message: 'phone is required and must be under 15 characters', code: 400 });
     }
     if (!password || typeof password !== 'string') {
-      return res.status(400).json({ error: 'password is required' });
+      return error(res, { message: 'password is required', code: 400 });
     }
 
     const user = await userService.createUser({ name, phone, password });
-    res.status(201).json(user);
+    return success(res, { data: user, message: 'User created successfully', code: 201 });
   } catch (err) {
     if (err.status) {
-      return res.status(err.status).json({ error: err.message });
+      return error(res, { message: err.message, code: err.status });
     }
     console.error('createUser error:', err);
-    res.status(500).json({ error: 'Failed to create user' });
+    return error(res, { message: 'Failed to create user' });
   }
 }
 
@@ -55,20 +56,20 @@ async function updateUser(req, res) {
     const { name, phone, password, status } = req.body;
 
     if (name !== undefined && name.length > 100) {
-      return res.status(400).json({ error: 'name must be under 100 characters' });
+      return error(res, { message: 'name must be under 100 characters', code: 400 });
     }
 
     const user = await userService.updateUser(id, { name, phone, password, status });
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return error(res, { message: 'User not found', code: 404 });
     }
-    res.json(user);
+    return success(res, { data: user, message: 'User updated successfully' });
   } catch (err) {
     if (err.status) {
-      return res.status(err.status).json({ error: err.message });
+      return error(res, { message: err.message, code: err.status });
     }
     console.error('updateUser error:', err);
-    res.status(500).json({ error: 'Failed to update user' });
+    return error(res, { message: 'Failed to update user' });
   }
 }
 
@@ -77,12 +78,12 @@ async function deleteUser(req, res) {
     const { id } = req.params;
     const removed = await userService.deleteUser(id);
     if (!removed) {
-      return res.status(404).json({ error: 'User not found' });
+      return error(res, { message: 'User not found', code: 404 });
     }
-    res.status(204).send();
+    return success(res, { message: 'User deleted successfully' });
   } catch (err) {
     console.error('deleteUser error:', err);
-    res.status(500).json({ error: 'Failed to delete user' });
+    return error(res, { message: 'Failed to delete user' });
   }
 }
 
@@ -91,20 +92,20 @@ async function login(req, res) {
     const { phone, password } = req.body;
 
     if (!phone || typeof phone !== 'string') {
-      return res.status(400).json({ error: 'phone is required' });
+      return error(res, { message: 'phone is required', code: 400 });
     }
     if (!password || typeof password !== 'string') {
-      return res.status(400).json({ error: 'password is required' });
+      return error(res, { message: 'password is required', code: 400 });
     }
 
     const user = await userService.login({ phone, password });
-    res.json(user);
+    return success(res, { data: user, message: 'Login successful' });
   } catch (err) {
     if (err.status) {
-      return res.status(err.status).json({ error: err.message });
+      return error(res, { message: err.message, code: err.status });
     }
     console.error('login error:', err);
-    res.status(500).json({ error: 'Failed to login' });
+    return error(res, { message: 'Failed to login' });
   }
 }
 

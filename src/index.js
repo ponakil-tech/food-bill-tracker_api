@@ -5,6 +5,8 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
 const billsRouter = require('./routes/bills');
 const usersRouter = require('./routes/users');
+const foodEntriesRouter = require('./routes/foodEntries');
+const { error: sendError } = require('./utils/apiResponse');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -24,16 +26,17 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/bills', billsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/food-entries', foodEntriesRouter);
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+  sendError(res, { message: 'Not found', code: 404 });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  sendError(res, { message: 'Internal server error', code: 500 });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
